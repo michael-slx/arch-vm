@@ -1,0 +1,11 @@
+{
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "mounts": [
+        "source=/dev,target=/dev,type=bind"
+    ],
+    "runArgs": [
+        "--privileged"
+    ]
+}

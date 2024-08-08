@@ -1,0 +1,122 @@
+name: Publish Box
+
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: "0 3 1,15 * *"
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+
+jobs:
+  prepare:
+    name: Prepare build
+    runs-on: ubuntu-latest
+
+    outputs:
+      build_version: ${{ steps.build_version.outputs.BUILD_VERSION }}
+
+    steps:
+      - id: build_version
+        name: Determine Build Version
+        run: echo "BUILD_VERSION=$(date +%Y-%m-%d.%H-%I-%S)" | tee -a "$GITHUB_OUTPUT"
+
+  build:
+    name: Build images
+    runs-on: ubuntu-latest
+
+    # Run in an Arch Linux container
+    # Volume mount and options are required because we need loop devices to work.
+    container:
+      image: archlinux/archlinux
+      volumes:
+        - /dev:/dev
+      options: --user root --privileged
+
+    needs: [prepare]
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pacman -Syuu --needed --noconfirm \
+            base-devel \
+            coreutils jq \
+            gptfdisk btrfs-progs dosfstools qemu-img \
+            arch-install-scripts
+
+      - name: Build Images
+        run: |
+          chmod 0754 -v ./build.sh
+          ./build.sh "${{ needs.prepare.outputs.build_version }}"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: "output-${{ needs.prepare.outputs.build_version }}"
+          path: output/
+          if-no-files-found: error
+          compression-level: 0
+
+  publish_github:
+    name: Publish Images to GitHub
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: "output-${{ needs.prepare.outputs.build_version }}"
+          path: output
+
+      - name: GitHub Release
+        run: |
+          chmod 0754 -v ./release_github.sh
+          ./release_github.sh "${{ needs.prepare.outputs.BUILD_VERSION }}"
+
+  # `publish_hcp` job is DISABLED for now, because `vagrant cloud publish` does not work
+  publish_hcp:
+    name: Publish Images to HCP
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    # DISABLED
+    if: false
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: "output-${{ needs.prepare.outputs.build_version }}"
+          path: output
+
+      - name: Install dependencies
+        run: |
+          wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          sudo apt-get update -y
+          sudo apt-get install -y vagrant hcp
+
+      - name: Log into HCP
+        run: hcp auth login --client-id="${{ vars.HCP_CLIENT_ID }}" --client-secret="${{ secrets.HCP_CLIENT_SECRET }}"
+
+      - name: HCP Release
+        shell: bash
+        run: |
+          echo "Storing login tokens ..."
+          export VAGRANT_CLOUD_TOKEN="${{ secrets.VAGRANT_CLOUD_TOKEN }};$(hcp auth print-access-token)"
+          echo "\$VAGRANT_CLOUD_TOKEN: ${#VAGRANT_CLOUD_TOKEN} chars"
+
+          echo "Executing HCP release script"
+          chmod 0754 -v ./release_hcp.sh
+          ./release_hcp.sh "${{ needs.prepare.outputs.BUILD_VERSION }}" "${{ vars.HCP_ORGANIZATION }}"
