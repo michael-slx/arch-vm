@@ -2,6 +2,11 @@ name: Publish Box
 
 on:
   workflow_dispatch:
+    inputs:
+      build_rev:
+        type: number
+        description: Build revision number
+        default: 0
 
   schedule:
     - cron: "0 3 1,15 * *"
@@ -9,6 +14,7 @@ on:
 env:
   GH_TOKEN: ${{ github.token }}
   GH_REPO: ${{ github.repository }}
+  BUILD_REVISION: ${{ inputs.build_rev || 0 }}
 
 jobs:
   prepare:
@@ -16,12 +22,12 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      build_version: ${{ steps.build_version.outputs.BUILD_VERSION }}
+      build_version: "${{ steps.build_version.outputs.BUILD_VERSION }}.${{ env.BUILD_REVISION }}"
 
     steps:
       - id: build_version
         name: Determine Build Version
-        run: echo "BUILD_VERSION=$(date +%Y-%m-%d.%H-%I-%S)" | tee -a "$GITHUB_OUTPUT"
+        run: echo "BUILD_VERSION=$(date +%Y%m%d)" | tee -a "$GITHUB_OUTPUT"
 
   build:
     name: Build images

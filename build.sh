@@ -24,7 +24,7 @@ export CORE_SERVICES=(
     pacman-init.service
 )
 
-readonly build_version="${1:-$(date +%Y-%m-%d-%H-%I-%S)}"
+readonly build_version="${1:-$(date +%Y%m%d-%H%I%S)}"
 echo "Building version $build_version"
 
 readonly install_dir="/install"
