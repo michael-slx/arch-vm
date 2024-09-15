@@ -16,8 +16,6 @@ syntax on
 set background=dark
 colorscheme evening
 
-set cursorline
-
 set shiftwidth=2
 set tabstop=4
 set expandtab
