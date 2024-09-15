@@ -19,7 +19,7 @@ export AUR_PACKAGES=(
     aurutils
     bauerbill
     pacaur
-    paru
+#   paru           # Disabled for now - Compile error
     pikaur
     repoctl
     trizen
