@@ -55,6 +55,13 @@ function mount_user_cache() {
 function cleanup_img() {
     echo "Cleaning up '$NAME' name ..."
 
-    chmod -Rv 0750 "$mount_dir/home/$USER/.cache"
+    unmount_user_cache
     exec_user_scriptlet "yay_cleanup.sh" "$USER"
+}
+
+function unmount_user_cache() {
+    echo "Unmounting cache of user '$USER' ..."
+    umount -v "$mount_dir/home/$USER/.cache" || true
+    arch-chroot "$mount_dir" /bin/chown -Rv "$USER:$USER" "/home/$USER/.cache"
+    arch-chroot "$mount_dir" /bin/chmod -Rv 0750 "/home/$USER/.cache"
 }

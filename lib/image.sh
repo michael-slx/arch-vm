@@ -49,11 +49,6 @@ function wait_for_device() {
 #
 # $cache_mount_dir: Mount point to unmount
 function unmount_cache() {
-    echo "Unmounting user caches ..."
-    for dir in "$mount_dir/home"/*/.cache; do
-        umount -v "$dir" || true
-    done
-
     if [[ -n "${cache_mount_dir+x}" ]]; then
         echo "Unmounting cache mount ..."
         umount -Rv "$cache_mount_dir" || true
