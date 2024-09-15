@@ -48,8 +48,8 @@ function mount_user_cache() {
     [[ -d "/var/cache/user/$USER" ]] || mkdir -pv "/var/cache/user/$USER"
     [[ -d "$mount_dir/home/$USER/.cache" ]] || mkdir -pv "$mount_dir/home/$USER/.cache"
     mount --bind -v "/var/cache/user/$USER" "$mount_dir/home/$USER/.cache"
-    arch-chroot "$mount_dir" /bin/chown "$USER:$USER" "/home/$USER/.cache"
-    arch-chroot "$mount_dir" /bin/chmod 0750 "/home/$USER/.cache"
+    arch-chroot "$mount_dir" /bin/chown -v "$USER:$USER" "/home/$USER/.cache"
+    arch-chroot "$mount_dir" /bin/chmod -v 0750 "/home/$USER/.cache"
 }
 
 function cleanup_img() {
