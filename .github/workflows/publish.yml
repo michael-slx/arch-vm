@@ -88,13 +88,10 @@ jobs:
           chmod 0754 -v ./release_github.sh
           ./release_github.sh "${{ needs.prepare.outputs.BUILD_VERSION }}"
 
-  # `publish_hcp` job is DISABLED for now, because `vagrant cloud publish` does not work
   publish_hcp:
     name: Publish Images to HCP
     runs-on: ubuntu-latest
     needs: [prepare, build]
-    # DISABLED
-    if: false
 
     steps:
       - name: Checkout Project
