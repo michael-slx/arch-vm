@@ -6,7 +6,7 @@ shopt -s extglob
 
 export DEFAULT_DISK_SIZE="2G"
 # shellcheck disable=SC2016
-export MIRROR='https://geo.mirror.pkgbuild.com/$repo/os/$arch'
+export MIRROR='https://fastly.mirror.pkgbuild.com/$repo/os/$arch'
 export CORE_PACKAGES=(
     base
     linux
